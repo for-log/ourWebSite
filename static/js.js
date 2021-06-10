@@ -1,5 +1,4 @@
 let mainlink = $(".link-to-main");
-let aboutlink = $(".link-to-about");
 let content = $(".content");
 
 mainlink.on("click", ()=>{
@@ -9,16 +8,9 @@ mainlink.on("click", ()=>{
     dataType: "html",
     success: updateContent
   })
+  socket.emit("/leave-room");
 });
 
-aboutlink.on("click", ()=>{
-  $.ajax({
-    type:"GET",
-    url:"/raw-page-about",
-    dataType: "html",
-    success: updateContent
-  })
-});
 
 socket.on("/delete-room", (data)=>{
   $("#" + data.id).remove();

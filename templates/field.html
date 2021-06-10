@@ -1,8 +1,23 @@
 <div class='field'></div>
+<div class="status"></div>
 <script type="text/javascript">
   for (let i = 0; i < 3; i++){
     for (let j = 0; j < 3; j++){
-      $(".field").append("<div class='block' id='" + i + "" + j + "'></div>")
+      $(".field").append("<div class='block' id='" + i + "" + j + "' onclick='doStep(this)'></div>")
     }
   }
+  function doStep(e) {
+    let eid = $(e).attr("id");
+    socket.emit("/make-step", {id:eid});
+  }
+  socket.on("/was-step", (data)=>{
+    if (data.step == 1) {
+      $(("#" + data.x) + data.y).css("background", "red");
+    }else {
+      $(("#" + data.x) + data.y).css("background", "green");
+    }
+  });
+  socket.on("/select-winner", (data)=>{
+    $(".status").html(data.winner);
+  })
 </script>

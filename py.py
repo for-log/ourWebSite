@@ -7,7 +7,7 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'ForMilfABC'
 socket = SocketIO(app)
 auths = {}
-ingame = []
+ingame = {}
 games = {}
 
 class Game:
@@ -16,9 +16,10 @@ class Game:
         self.users = [auths[user][0]]
         self.field = [[0 for j in range(3)] for i in range(3)]
         self.step = 0
+        self.laststep = 0
 
     def __repr__(self):
-        text = f"<div class='game' id='{self.idx}'>{self.users[0]}</div>"
+        text = f"<div class='game' onclick='connect(this)' id='{self.idx}'>{self.users[0]}</div>"
         return text
 
     @property
@@ -27,19 +28,26 @@ class Game:
 
     def add(self, user):
         if len(self.users) < 2:
-            self.users.append(user)
+            self.users.append(auths[user][0])
+            self.laststep = auths[user][0]
             return 1
         else:
             return 0
 
     def remove(self, user):
-        self.users.remove(user)
-        return self.users[0]
+        self.users.remove(auths[user][0])
+        try:
+            return self.users[0]
+        except Exception:
+            del self
 
     def who_win(self):
+        isDraw = 0
         for i in range(len(self.field)):
             if (self.field[i][0], self.field[i][1], self.field[i][2]) in ((1,1,1), (2,2,2)):
                 return self.field[i][0]
+            if (self.field[i][0], self.field[i][1], self.field[i][2]).count(0) == 0:
+                isDraw+=1
         for i in range(len(self.field)):
             if (self.field[0][i], self.field[1][i], self.field[2][i]) in ((1,1,1), (2,2,2)):
                 return self.field[0][i]
@@ -47,17 +55,21 @@ class Game:
             return self.field[0][2]
         if (self.field[0][0], self.field[1][1], self.field[2][2]) in ((1,1,1), (2,2,2)):
             return self.field[0][0]
+        if isDraw == 3:
+            return 3
         return -1
 
 
-    def set_field(self, pos):
-        block = self.field[pos[0]][pos[1]]
-        if block == 0:
+    def set_field(self, pos, user):
+        if auths[user][0] == self.laststep:
+            return 0, 0
+        if self.field[pos[0]][pos[1]] == 0:
             self.field[pos[0]][pos[1]] = 1 if self.step%2 == 0 else 2
             self.step += 1
-            return 1
+            self.laststep = auths[user][0]
+            return 1, self.field[pos[0]][pos[1]]
         else:
-            return 0
+            return 0, 0
 
 
 class Connection:
@@ -157,37 +169,70 @@ def join_game(data):
     if data["type"] == "random":
         if len(games) < 1:
             idx = randrange(0, 100000)
-            game = games[idx] = Game(idx, request.sid)
-            if game.add(request.sid):
-                join_room(idx)
-                ingame.append(request.sid)
-                return SUCCESS(render_template("field.html"))
+            game = Game(idx, request.sid)
+            games.update({idx:game});
+            join_room(str(idx))
+            ingame.update({request.sid:game})
+            return SUCCESS(render_template("field.html"))
         else:
             while 1:
                 idx, game = choice(list(games.items()))
                 if game.add(request.sid):
-                    join_room(idx)
-                    ingame.append(request.sid)
+                    join_room(str(idx))
+                    ingame.update({request.sid: game});
                     return SUCCESS(render_template("field.html"))
     else:
-        game = games.get(data["idx"])
-        if game:
+        game = games.get(int(data["idx"]))
+        if game != None:
             if (game.add(request.sid)):
-                join_room(data["idx"])
-                ingame.append(request.sid)
+                join_room(str(data["idx"]))
+                ingame.update({request.sid:game})
                 return SUCCESS(render_template("field.html"))
             else:
                 return FAIL(render_template("fail_join.html"))
         else:
-            games[game] = Game(game, request.sid)
+            game = Game(int(data["idx"]), request.sid)
+            games.update({game.idx:game})
+            join_room(str(data["idx"]))
+            ingame.update({request.sid:game})
             return SUCCESS(render_template("field.html"))
+
+@socket.on("/make-step")
+def make_step(data):
+    pos = list(map(int, data['id']))
+    game = ingame[request.sid]
+    status = game.set_field(pos, request.sid)
+    isEnd = game.who_win()
+    if (status[0]):
+        emit("/was-step", {"x":pos[0], "y":pos[1], "step":status[1]}, to=str(ingame[request.sid].idx))
+    if (isEnd != -1):
+        emit("/select-winner", {'winner':game.users[isEnd-1]}, to=str(ingame[request.sid].idx))
+        if isEnd != 3:
+            conn.change_execute(f"UPDATE users SET points = 100 WHERE name = '{game.users[isEnd-1]}';")
+        else:
+            for user in game.users:
+                conn.change_execute(f"UPDATE users SET points = 100 WHERE name = '{user}';")
+        del ingame[request.sid]
+        del games[game.idx]
+
+@socket.on("/leave-room")
+def leave_room():
+    game = ingame.get(request.sid)
+    if game != None:
+        winner = game.remove(request.sid)
+        emit("/select-winner", {'winner':winner}, to=str(ingame[request.sid].idx))
+        del ingame[request.sid]
 
 @socket.on("/close-window")
 def remove_user():
-    for game in games:
-        games[game].remove(request.sid)
+    game = ingame.get(request.sid)
+    auth = auths.get(request.sid)
+    if game != None:
+        winner = game.remove(request.sid)
+        emit("/select-winner", {'winner':winner}, to=str(ingame[request.sid].idx))
+        del ingame[request.sid]
+    if auth:
         del auths[request.sid]
-        ingame.remove(request.sid)
 
 if __name__ == "__main__":
     socket.run(app, debug=True)

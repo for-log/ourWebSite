@@ -22,6 +22,14 @@ Main
 
   </div>
   <script type="text/javascript">
+    function connect(e) {
+      let idx = $(e).attr("id");
+      socket.emit("/game", {type:"norandom", idx:idx}, (data)=>{
+        if (data.type == "success") {
+          updateContent(data.data);
+        }
+      });
+    }
     socket.emit("/allgames", {t:"t"}, (data)=>{
       if (data.type == "success") {
         $('.games').html(data.data);
