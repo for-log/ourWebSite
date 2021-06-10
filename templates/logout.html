@@ -1,0 +1,17 @@
+<a class='link-to-logout' href='#'>logout</a>
+<script type="text/javascript">
+  $(".link-to-logout").on('click', ()=>{
+    socket.emit("/raw-logout-request", {asd:"asd"}, (data)=>{
+      if (data.type == 'success') {
+        updateHeader(data.data);
+        $.ajax({
+          type:"GET",
+          url:"/raw-page-main",
+          dataType: "html",
+          success: updateContent
+        })
+      }
+    })
+    socket.emit("/close-window");
+  });
+</script>

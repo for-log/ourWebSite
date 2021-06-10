@@ -1,0 +1,21 @@
+<div class="register-form">
+    <p>Register</p>
+    <input class="name" type="text" placeholder="Your nickname">
+    <input class="pass" type="password" placeholder="Your password">
+    <button class="register">Register</button>
+</div>
+<script type="text/javascript">
+  $(".register").on("click",()=>{
+      socket.emit("/raw-register-request", {name:$(".name").val(), password:$(".pass").val()}, (data)=>{
+        if (data.type == 'success') {
+          updateHeader(data.data);
+          $.ajax({
+            type:"GET",
+            url:"/raw-page-main",
+            dataType: "html",
+            success: updateContent
+          })
+        }
+      });
+  })
+</script>

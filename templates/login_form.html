@@ -1,0 +1,21 @@
+<div class="login-form">
+    <p>Login</p>
+    <input class="name" type="text" placeholder="Your nickname">
+    <input class="pass" type="password" placeholder="Your password">
+    <button class="login">Login</button>
+</div>
+<script type="text/javascript">
+  $(".login").on("click",()=>{
+      socket.emit("/raw-login-request", {name:$(".name").val(), password:$(".pass").val()}, (data)=>{
+        if (data.type == 'success') {
+          updateHeader(data.data);
+          $.ajax({
+            type:"GET",
+            url:"/raw-page-main",
+            dataType: "html",
+            success: updateContent
+          })
+        }
+      });
+  })
+</script>

@@ -1,0 +1,21 @@
+<a class="link-to-register" href="#">register</a>
+<a class="link-to-login" href="#">login</a>
+<script type="text/javascript">
+  $(".link-to-register").on("click", ()=>{
+    $.ajax({
+      type:'GET',
+      url:"/raw-page-register",
+      dataType:"html",
+      success: updateContent
+    })
+  });
+
+  $(".link-to-login").on("click", ()=>{
+    $.ajax({
+      type:'GET',
+      url:"/raw-page-login",
+      dataType:"html",
+      success: updateContent
+    })
+  });
+</script>

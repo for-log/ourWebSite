@@ -2,11 +2,48 @@
 <html lang="en" dir="ltr">
   <head>
     <meta charset="utf-8">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <title>{% block title %}{% endblock %}</title>
       <link rel="stylesheet" type="text/css" href="{{ url_for( 'static', filename='css.css')}}">
   </head>
   <body>
+    <script type="text/javascript">
+      let socket = io();
+      socket.on('connect', function() {
+          //something else
+      });
+    </script>
+    <header>
+      <p>ForMilf</p>
+      <div class='header-links'>
+        <a class="link-to-main"  href="#">main</a>
+        <a class="link-to-about" href="#">about</a>
+        <div class="auth_links">
+          <a class="link-to-register" href="#">register</a>
+          <a class="link-to-login" href="#">login</a>
+          <script type="text/javascript">
+            $(".link-to-register").on("click", ()=>{
+              $.ajax({
+                type:'GET',
+                url:"/raw-page-register",
+                dataType:"html",
+                success: updateContent
+              })
+            });
+
+            $(".link-to-login").on("click", ()=>{
+              $.ajax({
+                type:'GET',
+                url:"/raw-page-login",
+                dataType:"html",
+                success: updateContent
+              })
+            });
+          </script>
+        </div>
+      </div>
+    </header>
     {% block body %}{% endblock %}
   </body>
   <script src="{{ url_for( 'static', filename='js.js')}}"></script>

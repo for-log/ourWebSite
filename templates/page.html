@@ -1,0 +1,34 @@
+{% extends 'html.html' %}
+
+{% block title %}
+Main
+{% endblock %}
+
+{% block body %}
+<div class='content'>
+  <div class="main-buttons">
+    <button class="search-game">Search game</button>
+    <script type="text/javascript">
+      $(".search-game").on("click", ()=>{
+        socket.emit("/game", {type:"random"}, (data)=>{
+          if (data.type == "success") {
+            updateContent(data.data);
+          }
+        })
+      })
+    </script>
+  </div>
+  <div class="games">
+
+  </div>
+  <script type="text/javascript">
+    socket.emit("/allgames", {t:"t"}, (data)=>{
+      if (data.type == "success") {
+        $('.games').html(data.data);
+      }else {
+        $('.games').html("<p>Empty!</p>");
+      }
+    })
+  </script>
+</div>
+{% endblock %}

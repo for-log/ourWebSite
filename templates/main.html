@@ -1,17 +1,24 @@
-{% extends 'html.html' %}
+<div class="main-buttons">
+  <button class="search-game">Search game</button>
+  <script type="text/javascript">
+    $(".search-game").on("click", ()=>{
+      socket.emit("/game", {type:"random"}, (data)=>{
+        if (data.type == "success") {
+          updateContent(data.data);
+        }
+      })
+    })
+  </script>
+</div>
+<div class="games">
 
-{% block title %}
-Main
-{% endblock %}
-
-{% block body %}
-<header>
-  <p>ForMilf</p>
-  <div class='header-links'>
-    <a href="#">main</a>
-    <a href="#">main</a>
-    <a href="#">main</a>
-    <a href="#">main</a>
-  </div>
-</header>
-{% endblock %}
+</div>
+<script type="text/javascript">
+  socket.emit("/allgames", {t:"t"}, (data)=>{
+    if (data.type == "success") {
+      $('.games').html(data.data);
+    }else {
+      $('.games').html("<p>Empty!</p>");
+    }
+  })
+</script>
